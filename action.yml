@@ -40,7 +40,7 @@ runs:
            echo "SLUG_BIN=${{ inputs.slug_binary_path }}" >> $GITHUB_ENV
         else
            echo "No binary provided. Building from source ..."
-           git clone https://github.com/<your-github-username>/slug.git /tmp/slug_source
+           git clone https://github.com/lixkel/slug.git /tmp/slug_source
            cd /tmp/slug_source
            cargo build --release
            echo "SLUG_BIN=/tmp/slug_source/target/release/slug" >> $GITHUB_ENV
