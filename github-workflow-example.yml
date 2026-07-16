@@ -1,0 +1,58 @@
+name: "Performance Benchmarks"
+
+on:
+  # Push is evaluated against history from the same branch and then recorded
+  push:
+  # Pull requests (into any branch) are evaluated against the target branch's history but not recorded
+  pull_request:
+
+concurrency:
+  group: "slug-storage"       # Serialize runs to prevent concurrent pushes
+  cancel-in-progress: false   # Never cancel run, it may be mid push
+
+# Deleted/reset branches can leave behind orphaned Slug records, clean them with `slug prune`
+# from somewhere the full branch set is visible (e.g. scheduled job, locally)
+
+jobs:
+  benchmark:
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: "write" # Allows Slug to push its notes (refs/notes/slug-shared) back
+
+    steps:
+      - name: "Checkout repository"
+        uses: "actions/checkout@v4"
+        with:
+          # Fetch full history because of notes and parallel branches
+          fetch-depth: 0 
+
+      # -------------------------------------------------------------
+      # 1. Set up specific language environment for your project
+      # -------------------------------------------------------------
+      - name: "Setup Python"
+        uses: "actions/setup-python@v5"
+        with:
+          python-version: "3.11"
+          
+      - name: "Install dependencies"
+        run: "pip install pyperf lxml" # Adjust per projects dependencies
+
+      # -------------------------------------------------------------
+      # 2. Run project's tests and save output to a file
+      # -------------------------------------------------------------
+      - name: "Run Benchmark"
+        run: |
+          # Replace this with projects actual benchmark command
+          python benchmarks/bench_html.py parse > benchmark_output.txt
+
+      # -------------------------------------------------------------
+      # 3. Call the Slug action
+      # -------------------------------------------------------------
+      - name: "Track Benchmarks with Slug"
+        uses: "lixkel/slug-action@v1" 
+        with:
+          file: "benchmark_output.txt"
+          type: "pyperf@2.7.0"
+          # Optional: Path to Slug binary can be provided, otherwise the latest
+          # release is downloaded (built from source when no release exists)
+          # slug_binary_path: "/path/to/slug"
